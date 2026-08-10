@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Бронювання столика — Назва ресторану</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+
+    <div class="text-center py-4">
+        <div class="text-uppercase small fw-bold" style="color:var(--gold);letter-spacing:1.5px">
+            Заброньювати
+        </div>
+        <h1 class="section-title display-5 mt-1">🍽️ Столик</h1>
+        <p class="text-muted">Оберіть дату, час і тип столика — ми підтвердимо бронювання найближчим часом.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mb-3">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-card p-4 p-md-5">
+
+                <form action="{{ url_for('reservation') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="time_start">Дата і час</label>
+                            <input type="datetime-local" class="form-control" id="time_start" name="time_start" required>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label" for="guests">Гостей</label>
+                            <input type="number" class="form-control" id="guests" name="guests" min="1" max="20" value="2" required>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label" for="type_table">Тип столика</label>
+                            <select class="form-select" id="type_table" name="type_table" required>
+                                <option value="" disabled selected>Оберіть</option>
+                                {% for t in table_types %}
+                                    <option value="{{ t }}">{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        ℹ️ Після оформлення бронювання матиме статус «Очікує підтвердження».
+                        Ми повідомимо вас, щойно адміністратор підтвердить бронь.
+                    </div>
+
+                    <button type="submit" class="btn btn-gold w-100 py-3 mt-2">
+                        Забронювати 🍽️
+                    </button>
+
+                    <a href="{{ url_for('my_reservations') }}" class="btn btn-outline-secondary w-100 mt-2">
+                        📅 Мої бронювання
+                    </a>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

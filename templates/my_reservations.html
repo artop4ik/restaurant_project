@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Мої бронювання — Назва ресторану</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+
+    <div class="text-center py-4">
+        <div class="text-uppercase small fw-bold" style="color:var(--gold);letter-spacing:1.5px">
+            Особистий кабінет
+        </div>
+        <h1 class="section-title display-5 mt-1">📅 Мої бронювання</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="text-end mb-3">
+        <a href="{{ url_for('reservation') }}" class="btn btn-gold">➕ Нове бронювання</a>
+    </div>
+
+    {% if reservations %}
+
+        {% for res in reservations %}
+
+            <div class="feature-card mb-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <div class="text-muted small">Бронювання #{{ res.id }}</div>
+                        <h2 class="h5 fw-bold mb-0">
+                            {{ res.time_start.strftime('%d.%m.%Y %H:%M') }}
+                        </h2>
+                    </div>
+
+                    <div class="text-end">
+                        {% if res.status == 'pending' %}
+                            <span class="badge text-bg-warning">🟡 Очікує підтвердження</span>
+                        {% elif res.status == 'confirmed' %}
+                            <span class="badge text-bg-success">🟢 Підтверджено</span>
+                        {% elif res.status == 'cancelled' %}
+                            <span class="badge text-bg-danger">🔴 Скасовано</span>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <div class="small text-muted">
+                    🍽️ Тип столика: {{ res.type_table }}
+                    <br>
+                    👥 Гостей: {{ res.guests }}
+                </div>
+
+                {% if res.status != 'cancelled' %}
+
+                    <hr>
+
+                    <form action="{{ url_for('cancel_reservation', reservation_id=res.id) }}"
+                          method="POST"
+                          onsubmit="return confirm('Ви впевнені, що хочете скасувати бронювання?');">
+
+                        <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+
+                        <button type="submit" class="btn btn-outline-danger">
+                            ❌ Скасувати бронювання
+                        </button>
+
+                    </form>
+
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="feature-card text-center py-5">
+            <div class="display-1 mb-3">📅</div>
+            <h2 class="h4 fw-bold">У вас ще немає бронювань</h2>
+            <p class="text-muted mb-4">Забронюйте столик заздалегідь, щоб не чекати!</p>
+            <a href="{{ url_for('reservation') }}" class="btn btn-gold">Забронювати столик 🍽️</a>
+        </div>
+
+    {% endif %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

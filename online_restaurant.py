@@ -4,8 +4,14 @@ from flask_login import LoginManager
 
 from functools import wraps
 
-from online_restaurant_db import Session, Users, Menu, Orders, Reservation
+from online_restaurant_db import (
+    Session, Users, Menu, Orders, Reservation,
+    CATEGORIES, TABLE_TYPES
+)
 from datetime import datetime
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+
 
 import os
 import uuid
@@ -153,6 +159,11 @@ def add_position():
         description = request.form['description']
         price = request.form['price']
         weight = request.form['weight']
+        category = request.form.get('category')
+
+        if category not in CATEGORIES:
+            flash('Оберіть коректну категорію!', 'danger')
+            return render_template('add_position.html', csrf_token=session["csrf_token"], categories=CATEGORIES)
 
         if not file or not file.filename:
             return 'Файл не вибрано або завантаження не вдалося'
@@ -165,18 +176,42 @@ def add_position():
 
         with Session() as cursor:
             new_position = Menu(name=name, ingredients=ingredients, description=description,
-                                price=price, weight=weight, file_name=unique_filename)
+                                price=price, weight=weight, file_name=unique_filename, category=category)
             cursor.add(new_position)
             cursor.commit()
 
         flash('Позицію додано успішно!')
 
-    return render_template('add_position.html', csrf_token=session["csrf_token"])
+    return render_template('add_position.html', csrf_token=session["csrf_token"], categories=CATEGORIES)
 @app.route('/menu')
 def menu():
-    with Session() as session:
-        all_positions = session.query(Menu).filter_by(active = True).all()
-    return render_template('menu.html',all_positions = all_positions)
+    selected_category = request.args.get('category', '').strip()
+    search_query = request.args.get('q', '').strip()
+
+    with Session() as cursor:
+        query = cursor.query(Menu).filter_by(active=True)
+
+        if selected_category and selected_category in CATEGORIES:
+            query = query.filter(Menu.category == selected_category)
+
+        if search_query:
+            like_pattern = f"%{search_query}%"
+            query = query.filter(
+                or_(
+                    Menu.name.ilike(like_pattern),
+                    Menu.ingredients.ilike(like_pattern)
+                )
+            )
+
+        all_positions = query.all()
+
+    return render_template(
+        'menu.html',
+        all_positions=all_positions,
+        categories=CATEGORIES,
+        selected_category=selected_category,
+        search_query=search_query
+    )
 
 @app.route('/cart')
 @login_required
@@ -521,6 +556,161 @@ def cancel_order(order_id):
     return redirect(url_for('my_orders'))
 
 
+@app.route('/reservation', methods=['GET', 'POST'])
+@login_required
+def reservation():
+    if request.method == 'POST':
+
+        if not validate_csrf():
+            return "Запит заблоковано!", 403
+
+        time_start_raw = request.form.get('time_start')
+        type_table = request.form.get('type_table')
+        guests = request.form.get('guests')
+
+        if type_table not in TABLE_TYPES:
+            flash('Оберіть коректний тип столика!', 'danger')
+            return render_template('reservation.html', csrf_token=session["csrf_token"], table_types=TABLE_TYPES)
+
+        try:
+            time_start = datetime.fromisoformat(time_start_raw)
+        except (ValueError, TypeError):
+            flash('Вкажіть коректну дату та час бронювання!', 'danger')
+            return render_template('reservation.html', csrf_token=session["csrf_token"], table_types=TABLE_TYPES)
+
+        if time_start <= datetime.now():
+            flash('Час бронювання має бути у майбутньому!', 'danger')
+            return render_template('reservation.html', csrf_token=session["csrf_token"], table_types=TABLE_TYPES)
+
+        try:
+            guests = int(guests)
+            if guests < 1 or guests > 20:
+                raise ValueError
+        except (ValueError, TypeError):
+            flash('Вкажіть коректну кількість гостей (1-20)!', 'danger')
+            return render_template('reservation.html', csrf_token=session["csrf_token"], table_types=TABLE_TYPES)
+
+        with Session() as cursor:
+            new_reservation = Reservation(
+                time_start=time_start,
+                type_table=type_table,
+                guests=guests,
+                status='pending',
+                user_id=current_user.id
+            )
+            cursor.add(new_reservation)
+            cursor.commit()
+
+        flash('Столик успішно заброньовано! Очікуйте підтвердження.', 'success')
+        return redirect(url_for('my_reservations'))
+
+    return render_template('reservation.html', csrf_token=session["csrf_token"], table_types=TABLE_TYPES)
+
+
+@app.route('/my_reservations')
+@login_required
+def my_reservations():
+    with Session() as cursor:
+        reservations = (
+            cursor.query(Reservation)
+            .options(joinedload(Reservation.user))
+            .filter_by(user_id=current_user.id)
+            .order_by(Reservation.time_start.desc())
+            .all()
+        )
+
+    return render_template('my_reservations.html', reservations=reservations)
+
+
+@app.route('/reservation/cancel/<int:reservation_id>', methods=['POST'])
+@login_required
+def cancel_reservation(reservation_id):
+    if not validate_csrf():
+        return "Запит заблоковано!", 403
+
+    with Session() as cursor:
+        res = (
+            cursor.query(Reservation)
+            .filter_by(id=reservation_id, user_id=current_user.id)
+            .first()
+        )
+
+        if not res:
+            flash('Бронювання не знайдено.', 'danger')
+            return redirect(url_for('my_reservations'))
+
+        if res.status == 'cancelled':
+            flash('Це бронювання вже скасовано.', 'warning')
+            return redirect(url_for('my_reservations'))
+
+        res.status = 'cancelled'
+        cursor.commit()
+
+    flash('Бронювання успішно скасовано.', 'success')
+    return redirect(url_for('my_reservations'))
+
+
+@app.route('/admin/reservations')
+@login_required
+@admin_required
+def admin_reservations():
+   
+
+    with Session() as cursor:
+        reservations = (
+            cursor.query(Reservation)
+            .options(joinedload(Reservation.user))
+            .order_by(Reservation.time_start.desc())
+            .all()
+        )
+
+    return render_template('admin_reservations.html', reservations=reservations)
+
+
+@app.route('/admin/reservations/confirm/<int:reservation_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_confirm_reservation(reservation_id):
+    if not validate_csrf():
+        return "Запит заблоковано!", 403
+
+    with Session() as cursor:
+        res = cursor.query(Reservation).filter_by(id=reservation_id).first()
+
+        if not res:
+            flash('Бронювання не знайдено.', 'danger')
+            return redirect(url_for('admin_reservations'))
+
+        if res.status == 'cancelled':
+            flash('Скасоване бронювання не можна підтвердити.', 'warning')
+            return redirect(url_for('admin_reservations'))
+
+        res.status = 'confirmed'
+        cursor.commit()
+
+    flash('Бронювання підтверджено.', 'success')
+    return redirect(url_for('admin_reservations'))
+
+
+@app.route('/admin/reservations/cancel/<int:reservation_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_cancel_reservation(reservation_id):
+    if not validate_csrf():
+        return "Запит заблоковано!", 403
+
+    with Session() as cursor:
+        res = cursor.query(Reservation).filter_by(id=reservation_id).first()
+
+        if not res:
+            flash('Бронювання не знайдено.', 'danger')
+            return redirect(url_for('admin_reservations'))
+
+        res.status = 'cancelled'
+        cursor.commit()
+
+    flash('Бронювання скасовано.', 'success')
+    return redirect(url_for('admin_reservations'))
 
 
 if __name__ == '__main__':

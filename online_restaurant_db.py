@@ -1,4 +1,4 @@
-from sqlalchemy import Column, create_engine, String, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, create_engine, String, Boolean, DateTime, ForeignKey, JSON, Integer
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -13,6 +13,30 @@ from datetime import datetime
 DATABASE_FILE = "online_restaurant.db"
 engine = create_engine(f"sqlite:///{DATABASE_FILE}", echo=True)
 Session = sessionmaker(bind=engine)
+
+
+# Фіксований список категорій страв
+CATEGORIES = [
+    "Піца",
+    "Паста",
+    "Салати",
+    "Супи",
+    "Закуски",
+    "М'ясні страви",
+    "Напої",
+    "Десерти",
+]
+
+# Фіксований список типів столиків для бронювання
+TABLE_TYPES = [
+    "2-місний",
+    "4-місний",
+    "6-місний",
+    "VIP-зона",
+]
+
+# Статуси бронювання
+RESERVATION_STATUSES = ["pending", "confirmed", "cancelled"]
 
 
 class Base(DeclarativeBase):
@@ -48,6 +72,7 @@ class Menu(Base):
     price: Mapped[int] = mapped_column()
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     file_name: Mapped[str] = mapped_column(String)
+    category: Mapped[str] = mapped_column(String(50), default="Інше")
 
 
 class Reservation(Base):
@@ -55,6 +80,8 @@ class Reservation(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     time_start: Mapped[datetime] = mapped_column(DateTime)
     type_table: Mapped[str] = mapped_column(String(20))
+    guests: Mapped[int] = mapped_column(Integer, default=2)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
     user = relationship("Users", foreign_keys="Reservation.user_id", back_populates="reservations")

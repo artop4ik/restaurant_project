@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Бронювання — Адмін-панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+<body>
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+    <div class="row g-4">
+        <aside class="col-lg-4">
+            {% include '_admin_navigation.html' %}
+        </aside>
+
+        <section class="col-lg-8">
+            <div class="form-card p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <div class="text-uppercase small fw-bold" style="color:var(--gold);letter-spacing:1.5px">
+                            Адміністратор
+                        </div>
+                        <h1 class="section-title mt-1 mb-2">Бронювання</h1>
+                        <p class="text-muted mb-0">Перегляд та підтвердження бронювань столиків.</p>
+                    </div>
+                    <span class="badge rounded-pill text-bg-light p-2">📅</span>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mb-3">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% if reservations %}
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Гість</th>
+                                    <th>Дата і час</th>
+                                    <th>Столик</th>
+                                    <th>Гостей</th>
+                                    <th>Статус</th>
+                                    <th>Дії</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for res in reservations %}
+                                <tr>
+                                    <td class="fw-bold">#{{ res.id }}</td>
+                                    <td>{{ res.user.nickname if res.user else '—' }}</td>
+                                    <td>{{ res.time_start.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>{{ res.type_table }}</td>
+                                    <td>{{ res.guests }}</td>
+                                    <td>
+                                        {% if res.status == 'pending' %}
+                                            <span class="badge text-bg-warning">🟡 Очікує</span>
+                                        {% elif res.status == 'confirmed' %}
+                                            <span class="badge text-bg-success">🟢 Підтверджено</span>
+                                        {% elif res.status == 'cancelled' %}
+                                            <span class="badge text-bg-danger">🔴 Скасовано</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if res.status == 'pending' %}
+                                            <div class="d-flex gap-2">
+                                                <form action="{{ url_for('admin_confirm_reservation', reservation_id=res.id) }}" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+                                                    <button type="submit" class="btn btn-sm btn-gold">✅ Підтвердити</button>
+                                                </form>
+                                                <form action="{{ url_for('admin_cancel_reservation', reservation_id=res.id) }}" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">❌ Скасувати</button>
+                                                </form>
+                                            </div>
+                                        {% elif res.status == 'confirmed' %}
+                                            <form action="{{ url_for('admin_cancel_reservation', reservation_id=res.id) }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">❌ Скасувати</button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-muted small">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="feature-card text-center py-5">
+                        <div class="display-4 mb-3">📭</div>
+                        <h2 class="h5 fw-bold">Бронювань поки немає</h2>
+                        <p class="text-muted mb-0">Нові бронювання з'являться тут автоматично.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>
