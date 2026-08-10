@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Меню — Назва ресторану</title><link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}"></head><body>
+{% include '_navigation.html' %}
+<main class="container pb-5">
+{% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% if messages %}
+
+        {% for category, message in messages %}
+
+            <div class="alert alert-{{ category }} alert-dismissible fade show"
+                 role="alert">
+
+                {% if category == 'success' %}
+                    ✅
+                {% endif %}
+
+                {{ message }}
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert">
+                </button>
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+{% endwith %}
+
+
+
+<div class="text-center py-4"><div class="text-uppercase small fw-bold" style="color:var(--gold);letter-spacing:1.5px">Наші страви</div>
+<h1 class="section-title display-5 mt-1">Меню</h1><p class="text-muted mb-0">Оберіть те, що хочеться скуштувати сьогодні.</p></div>
+{% if all_positions %}<div class="row g-4 mt-2">
+{% for position in all_positions %}<div class="col-sm-6 col-lg-4 col-xl-3"><article class="menu-card">
+{% if position.file_name %}<img src="{{ url_for('static', filename='menu/' ~ position.file_name) }}" class="menu-card-img" alt="{{ position.name }}">
+{% else %}<div class="menu-card-placeholder">🍕</div>{% endif %}
+<div class="p-4"><h2 class="h5 fw-bold mb-2">{{ position.name }}</h2>
+{% if position.description %}<p class="text-muted small mb-3">{{ position.description }}</p>{% endif %}
+{% if position.ingredients %}<p class="small mb-3"><span class="fw-bold">Склад:</span> {{ position.ingredients }}</p>{% endif %}
+<div class="d-flex justify-content-between align-items-end gap-2"><div>{% if position.weight %}<div class="text-muted small">{{ position.weight }} г</div>{% endif %}
+<form action="{{ url_for('add_to_cart', menu_id=position.id) }}"
+      method="POST">
+
+    <input type="hidden"
+           name="csrf_token"
+           value="{{ session['csrf_token'] }}">
+
+    <button class="btn btn-gold btn-sm" type="submit">
+        🛒 Додати
+    </button>
+
+</form>
+</div></article></div>{% endfor %}</div>
+{% else %}<div class="feature-card text-center py-5 mt-3"><div class="display-4 mb-3">🍽️</div><h2 class="h4 fw-bold">Меню поки порожнє</h2><p class="text-muted mb-0">Незабаром тут з'являться нові страви.</p></div>{% endif %}
+</main>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script></body></html>

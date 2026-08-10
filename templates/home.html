@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Головна — Назва ресторану</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-4">
+
+    <section class="hero p-4 p-md-5">
+
+        <div class="hero-content">
+
+            <div class="text-uppercase fw-bold mb-3"
+                 style="color:var(--gold-light);letter-spacing:2px">
+
+                Смачно • Швидко • З любов'ю
+
+            </div>
+
+            {% if current_user.is_authenticated %}
+
+                <h1>
+                    Вітаємо, {{ current_user.nickname }}! 👋
+                </h1>
+
+                <p class="mt-3 mb-4">
+                    Раді знову бачити вас у нашому ресторані.
+                    Оберіть щось смачне з нашого меню!
+                </p>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <a href="/menu"
+                       class="btn btn-gold btn-lg px-4">
+                        Переглянути меню 🍕
+                    </a>
+
+                    <a href="/my_orders"
+                       class="btn btn-outline-light btn-lg px-4">
+                        Мої замовлення 🛒
+                    </a>
+
+                </div>
+
+            {% else %}
+
+                <h1>
+                    Смак, до якого хочеться повертатися.
+                </h1>
+
+                <p class="mt-3 mb-4">
+                    Обирайте улюблені страви з нашого меню
+                    та насолоджуйтеся якісною їжею.
+                </p>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <a href="/menu"
+                       class="btn btn-gold btn-lg px-4">
+                        Переглянути меню 🍕
+                    </a>
+
+                    <a href="/register"
+                       class="btn btn-outline-light btn-lg px-4">
+                        Створити акаунт
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+    <section class="py-5">
+
+        <div class="text-center mb-4">
+
+            <div class="text-uppercase small fw-bold"
+                 style="color:var(--gold);letter-spacing:1.5px">
+
+                Чому ми
+
+            </div>
+
+            <h2 class="section-title mt-1">
+                Все просто
+            </h2>
+
+        </div>
+
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon mb-3">
+                        🍕
+                    </div>
+
+                    <h3 class="h5 fw-bold">
+                        Свіже меню
+                    </h3>
+
+                    <p class="text-muted mb-0">
+                        Обирайте страви та переглядайте
+                        їх склад і вартість.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon mb-3">
+                        ⚡
+                    </div>
+
+                    <h3 class="h5 fw-bold">
+                        Зручне замовлення
+                    </h3>
+
+                    <p class="text-muted mb-0">
+                        Працюйте з меню та своїми замовленнями
+                        в одному місці.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <div class="feature-icon mb-3">
+                        🔐
+                    </div>
+
+                    <h3 class="h5 fw-bold">
+                        Особистий акаунт
+                    </h3>
+
+                    <p class="text-muted mb-0">
+                        Реєструйтеся та отримуйте доступ
+                        до функцій користувачів.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="footer">
+
+    <div class="container text-center">
+        Назва ресторану
+    </div>
+
+</footer>
+
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}">
+</script>
+
+</body>
+</html>

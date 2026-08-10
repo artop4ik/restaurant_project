@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Реєстрація — Назва ресторану</title><link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}"></head><body>
+{% include '_navigation.html' %}
+<main class="auth-page"><div class="container"><div class="auth-card">
+<div class="text-center"><div class="auth-icon">✨</div><h1 class="h2">Створити акаунт</h1><p class="text-muted mb-4">Приєднуйтеся до нашого ресторану</p></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category,message in messages %}<div class="alert alert-{{ category }} mb-3">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+<form action="/register" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="mb-3"><label for="nickname" class="form-label">Nickname</label><input id="nickname" type="text" name="nickname" class="form-control" placeholder="Придумайте nickname" autocomplete="username" required></div>
+<div class="mb-3"><label for="email" class="form-label">Email</label><input id="email" type="email" name="email" class="form-control" placeholder="you@example.com" autocomplete="email" required></div>
+<div class="mb-4"><label for="password" class="form-label">Пароль</label><input id="password" type="password" name="password" class="form-control" placeholder="Створіть пароль" autocomplete="new-password" required></div>
+<button class="btn btn-gold w-100 py-2" type="submit">Зареєструватися</button></form>
+<p class="text-center text-muted mt-4 mb-0">Вже маєте акаунт? <a href="/login" class="fw-bold text-decoration-none" style="color:var(--coffee-700)">Увійти</a></p>
+</div></div></main>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script></body></html>

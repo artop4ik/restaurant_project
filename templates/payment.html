@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>Оформлення замовлення</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+
+    <div class="text-center py-4">
+
+        <div class="text-uppercase small fw-bold"
+             style="color:var(--gold);letter-spacing:1.5px">
+
+            Оформлення
+
+        </div>
+
+        <h1 class="section-title display-5 mt-1">
+            💳 Оплата замовлення
+        </h1>
+
+        <p class="text-muted">
+            Заповніть дані для оформлення замовлення.
+        </p>
+
+    </div>
+
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="form-card p-4 p-md-5">
+
+                <form action="{{ url_for('checkout') }}"
+                      method="POST">
+
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ session['csrf_token'] }}">
+
+
+                    <h2 class="h5 fw-bold mb-4">
+                        Дані клієнта
+                    </h2>
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+
+                            <label class="form-label"
+                                   for="name">
+
+                                Ім'я
+
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="name"
+                                name="name"
+                                placeholder="Ваше ім'я"
+                                required>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label class="form-label"
+                                   for="phone">
+
+                                Телефон
+
+                            </label>
+
+                            <input
+                                type="tel"
+                                class="form-control"
+                                id="phone"
+                                name="phone"
+                                placeholder="+380..."
+                                required>
+
+                        </div>
+
+
+                        <div class="col-12">
+
+                            <label class="form-label"
+                                   for="address">
+
+                                Адреса доставки
+
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="address"
+                                name="address"
+                                placeholder="Вулиця, будинок, квартира"
+                                required>
+
+                        </div>
+
+                    </div>
+
+
+                    <hr class="my-4">
+
+
+                    <h2 class="h5 fw-bold mb-4">
+                        Спосіб оплати
+                    </h2>
+
+
+                    <div class="mb-3">
+
+                        <div class="form-check">
+
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="payment_method"
+                                id="cash"
+                                value="cash"
+                                checked>
+
+                            <label class="form-check-label"
+                                   for="cash">
+
+                                💵 Готівкою при отриманні
+
+                            </label>
+
+                        </div>
+
+
+                        <div class="form-check mt-2">
+
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="payment_method"
+                                id="card"
+                                value="card">
+
+                            <label class="form-check-label"
+                                   for="card">
+
+                                💳 Банківською карткою
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="alert alert-info">
+
+                        ℹ️ Це демонстраційна форма оплати.
+                        Реальні дані банківської картки
+                        не зберігаються.
+
+                    </div>
+
+
+                    <div class="d-flex justify-content-between
+                                align-items-center mt-4">
+
+                        <span class="fw-bold">
+                            До сплати:
+                        </span>
+
+                        <span class="price fs-4">
+
+                            {{ "%.2f"|format(total_price) }} грн
+
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-gold w-100 py-3 mt-4">
+
+                        Підтвердити замовлення 🍕
+                    </button>
+
+
+                    <a href="{{ url_for('cart') }}"
+                       class="btn btn-outline-secondary w-100 mt-2">
+
+                        ← Повернутися до кошика
+
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}">
+</script>
+
+</body>
+</html>

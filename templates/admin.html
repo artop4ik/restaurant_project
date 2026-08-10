@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Адмін-панель — Назва ресторану</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+<body>
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+    <div class="row g-4">
+        <aside class="col-lg-4">
+            {% include '_admin_navigation.html' %}
+        </aside>
+
+        <section class="col-lg-8">
+            <div class="form-card p-4 p-md-5 mb-4">
+                <div class="text-uppercase small fw-bold"
+                     style="color:var(--gold);letter-spacing:1.5px">
+                    Адміністратор
+                </div>
+                <h1 class="section-title mt-1 mb-2">Панель керування</h1>
+                <p class="text-muted mb-0">
+                    Керуйте меню та замовленнями ресторану.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon mb-3">🍕</div>
+                        <div class="text-muted small">Позицій у меню</div>
+                        <div class="display-6 fw-bold">
+                            {{ menu_count if menu_count is defined else '—' }}
+                        </div>
+                        <a href="/menu" class="btn btn-gold mt-3">Відкрити меню</a>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon mb-3">📦</div>
+                        <div class="text-muted small">Замовлень</div>
+                        <div class="display-6 fw-bold">
+                            {{ orders_count if orders_count is defined else '—' }}
+                        </div>
+                        <a href="/admin/orders" class="btn btn-gold mt-3">Переглянути</a>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="feature-card">
+                        <h2 class="h5 fw-bold mb-3">Швидкі дії</h2>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="/add_position" class="btn btn-gold">
+                                ➕ Додати страву
+                            </a>
+                            <a href="/menu" class="btn btn-outline-secondary">
+                                📋 Переглянути меню
+                            </a>
+                            <a href="/admin/orders" class="btn btn-outline-secondary">
+                                📦 Замовлення
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

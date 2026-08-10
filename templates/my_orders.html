@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>Мої замовлення</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/restaurant.css') }}">
+
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+
+    <div class="text-center py-4">
+
+        <div class="text-uppercase small fw-bold"
+             style="color:var(--gold);letter-spacing:1.5px">
+
+            Особистий кабінет
+
+        </div>
+
+        <h1 class="section-title display-5 mt-1">
+            📦 Мої замовлення
+        </h1>
+
+    </div>
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category }}">
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    {% if orders %}
+
+        {% for order in orders %}
+
+            <div class="feature-card mb-4">
+
+                <div class="d-flex justify-content-between
+                            align-items-center mb-3">
+
+                    <div>
+
+                        <div class="text-muted small">
+                            Замовлення #{{ order.id }}
+                        </div>
+
+                        <h2 class="h5 fw-bold mb-0">
+
+                            {{ order.order_time.strftime(
+                                '%d.%m.%Y %H:%M'
+                            ) }}
+
+                        </h2>
+
+                    </div>
+
+
+                    <div class="text-end">
+
+                        <div class="price">
+
+                            {{ "%.2f"|format(order.total_price) }}
+                            грн
+
+                        </div>
+{% if order['status'] == 'pending' %}
+
+    <span class="badge text-bg-warning">
+        🟡 Очікує оплати
+    </span>
+
+{% elif order['status'] == 'paid' %}
+
+    <span class="badge text-bg-success">
+        🟢 Оплачено
+    </span>
+
+{% elif order['status'] == 'cancelled' %}
+
+    <span class="badge text-bg-danger">
+        🔴 Скасовано
+    </span>
+
+{% endif %}
+                    </div>
+
+                </div>
+
+
+                <hr>
+
+
+                <h3 class="h6 fw-bold">
+                    Позиції
+                </h3>
+
+
+                {% for item in order['items'] %}
+
+                    <div class="d-flex justify-content-between
+                                align-items-center py-2">
+
+                        <span>
+
+                            {{ item.name }}
+
+                            <span class="text-muted">
+                                × {{ item.quantity }}
+                            </span>
+
+                        </span>
+
+                        <span class="fw-semibold">
+
+                            {{ "%.2f"|format(
+                                item.price * item.quantity
+                            ) }}
+                            грн
+
+                        </span>
+
+                    </div>
+
+                {% endfor %}
+
+
+                <hr>
+
+
+                <div class="small text-muted">
+
+                    💳 Оплата:
+                    {{ order.payment_method }}
+
+                    <br>
+
+                    📍 Адреса:
+                    {{ order.address }}
+
+                </div>
+                {% if order['status'] == 'pending' %}
+
+    <hr>
+
+    <form
+        action="{{ url_for(
+            'cancel_order',
+            order_id=order['id']
+        ) }}"
+        method="POST"
+        onsubmit="return confirm(
+            'Ви впевнені, що хочете скасувати замовлення?'
+        );">
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ session['csrf_token'] }}">
+
+        <button
+            type="submit"
+            class="btn btn-outline-danger">
+
+            ❌ Скасувати замовлення
+
+        </button>
+
+    </form>
+
+{% endif %}
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="feature-card text-center py-5">
+
+            <div class="display-1 mb-3">
+                📦
+            </div>
+
+            <h2 class="h4 fw-bold">
+                У вас ще немає замовлень
+            </h2>
+
+            <p class="text-muted mb-4">
+                Саме час обрати щось смачне!
+            </p>
+
+            <a href="{{ url_for('menu') }}"
+               class="btn btn-gold">
+
+                Перейти до меню 🍕
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}">
+</script>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Кошик — Назва ресторану</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+
+<main class="container pb-5">
+
+    <div class="text-center py-4">
+
+        <div class="text-uppercase small fw-bold"
+             style="color:var(--gold);letter-spacing:1.5px">
+
+            Ваше замовлення
+
+        </div>
+
+        <h1 class="section-title display-5 mt-1">
+            🛒 Кошик
+        </h1>
+
+        <p class="text-muted">
+            Перевірте вибрані позиції перед оформленням.
+        </p>
+
+    </div>
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category }} mb-3">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    {% if cart_items %}
+
+        <div class="row g-4">
+
+            <!-- Список товаров -->
+
+            <div class="col-lg-8">
+
+                {% for cart_item in cart_items %}
+
+                    <div class="feature-card mb-3">
+
+                        <div class="row align-items-center g-3">
+
+                            <!-- Фото -->
+
+                            <div class="col-4 col-sm-3">
+
+                                {% if cart_item.item.file_name %}
+
+                                    <img
+                                        src="{{ url_for(
+                                            'static',
+                                            filename='menu/' ~ cart_item.item.file_name
+                                        ) }}"
+                                        alt="{{ cart_item.item.name }}"
+                                        class="img-fluid rounded-3"
+                                        style="height:120px;width:100%;object-fit:cover;"
+                                    >
+
+                                {% else %}
+
+                                    <div
+                                        class="menu-card-placeholder rounded-3"
+                                        style="height:120px;">
+                                        🍕
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <!-- Информация -->
+
+                            <div class="col-8 col-sm-5">
+
+                                <h2 class="h5 fw-bold mb-1">
+                                    {{ cart_item.item.name }}
+                                </h2>
+
+                                {% if cart_item.item.description %}
+
+                                    <p class="text-muted small mb-2">
+                                        {{ cart_item.item.description }}
+                                    </p>
+
+                                {% endif %}
+
+                                <div class="price">
+                                    {{ cart_item.item.price }} грн
+                                </div>
+
+                            </div>
+
+
+                            <!-- Количество -->
+
+                            <div class="col-12 col-sm-4">
+
+                                <div class="d-flex justify-content-sm-end
+                                            align-items-center gap-2">
+
+                                    <!-- Уменьшить -->
+
+                                 <form action="{{ url_for('decrease_from_cart', menu_id=cart_item.item.id) }}"
+      method="POST">
+
+    <input type="hidden"
+           name="csrf_token"
+           value="{{ session['csrf_token'] }}">
+
+    <button type="submit"
+            class="btn btn-outline-secondary">
+        −
+    </button>
+
+</form>
+
+                                    <span
+                                        class="fw-bold px-2"
+                                        style="min-width:30px;text-align:center;">
+
+                                        {{ cart_item.quantity }}
+
+                                    </span>
+
+
+                                    <!-- Увеличить -->
+
+                           <form action="{{ url_for('increase_cart', menu_id=cart_item.item.id) }}"
+      method="POST">
+
+    <input type="hidden"
+           name="csrf_token"
+           value="{{ session['csrf_token'] }}">
+
+    <button type="submit"
+            class="btn btn-outline-secondary">
+        +
+    </button>
+
+</form>
+
+                                    <!-- Удалить -->
+
+                                  <form action="{{ url_for('remove_from_cart', menu_id=cart_item.item.id) }}"
+      method="POST">
+
+    <input type="hidden"
+           name="csrf_token"
+           value="{{ session['csrf_token'] }}">
+
+    <button type="submit"
+            class="btn btn-outline-danger">
+        🗑️
+    </button>
+
+</form>
+                                </div>
+
+                                <div class="text-end mt-2">
+
+                                    <strong>
+                                        {{ "%.2f"|format(cart_item.total) }} грн
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <!-- Итог -->
+
+            <div class="col-lg-4">
+
+                <div class="feature-card sticky-lg-top"
+                     style="top:20px;">
+
+                    <h2 class="h4 fw-bold mb-4">
+                        Разом
+                    </h2>
+
+                    <div class="d-flex justify-content-between
+                                mb-3">
+
+                        <span class="text-muted">
+                            Позицій:
+                        </span>
+
+                        <span class="fw-semibold">
+                            {{ cart_items|length }}
+                        </span>
+
+                    </div>
+
+
+                    <hr>
+
+
+                    <div class="d-flex justify-content-between
+                                align-items-center mb-4">
+
+                        <span class="fw-bold">
+                            До сплати:
+                        </span>
+
+                        <span class="price fs-4">
+                            {{ "%.2f"|format(total_price) }} грн
+                        </span>
+
+                    </div>
+
+
+                  <a href="{{ url_for('checkout') }}"
+   class="btn btn-gold w-100 py-2">
+
+    Оформити замовлення 🍕
+</a>
+                    <a
+                        href="{{ url_for('menu') }}"
+                        class="btn btn-outline-secondary w-100 mt-2">
+
+                        ← Повернутися до меню
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    {% else %}
+
+        <!-- Пустой кошик -->
+
+        <div class="feature-card text-center py-5">
+
+            <div class="display-1 mb-3">
+                🛒
+            </div>
+
+            <h2 class="h4 fw-bold">
+                Ваш кошик порожній
+            </h2>
+
+            <p class="text-muted mb-4">
+                Додайте щось смачне з нашого меню.
+            </p>
+
+            <a
+                href="{{ url_for('menu') }}"
+                class="btn btn-gold px-4">
+
+                Перейти до меню 🍕
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</main>
+
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}">
+</script>
+
+</body>
+
+</html>
