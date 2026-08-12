@@ -352,7 +352,7 @@ def admin():
     )
 
 
-@app.route('/admin/orders')
+@app.route('/admin/orders', methods=['GET'])
 @login_required
 @admin_required
 def admin_orders():
@@ -364,11 +364,11 @@ def admin_orders():
             .order_by(Orders.order_time.desc())
             .all()
         )
-          
+        
 
     return render_template(
         'admin_orders.html',
-        orders=orders
+        orders=orders,
     )
 
 @app.route('/my_orders')
@@ -492,7 +492,8 @@ def checkout():
                 ),
                 order_time=datetime.now(),
                 user_id=current_user.id,
-                status='paid' if payment_method == 'online' else 'pending'
+                status='paid' if payment_method == 'online' else 'pending',
+                total_price=total_price
             )
 
             cursor.add(new_order)

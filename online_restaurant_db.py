@@ -95,6 +95,7 @@ class Orders(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     status: Mapped[str] = mapped_column(String(20), default='pending')
     user = relationship("Users", foreign_keys="Orders.user_id", back_populates="orders")
+    total_price: Mapped[float] = mapped_column()
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
