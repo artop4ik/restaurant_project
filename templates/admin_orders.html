@@ -61,7 +61,7 @@
                                         #{{ order.id }}
                                     </td>
                                     <td>
-                                        {{ order.order_date if order.order_date is defined else '—' }}
+                                        {{ order.order_time.strftime('%Y-%m-%d %H:%M') if order.order_time is defined else '—' }}
                                     </td>
                                     <td class="price">
                                         {{ order.total_price if order.total_price is defined else '—' }}

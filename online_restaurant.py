@@ -129,7 +129,7 @@ def login():
 
     return render_template('login.html', csrf_token=session["csrf_token"])
 
-@app.route("/logout", methods=["POST"])
+@app.route("/logout", methods=["POST", "GET"])
 @login_required
 def logout():
     if not validate_csrf():
@@ -137,10 +137,7 @@ def logout():
 
     logout_user()
 
-    return jsonify({
-        "success": True,
-        "message": "Logged out"
-    })
+    return redirect(url_for('login'))
 
 @app.route("/add_position", methods=['GET', 'POST'])
 @login_required
@@ -359,11 +356,15 @@ def admin():
 @login_required
 @admin_required
 def admin_orders():
-    if current_user.role != 'admin':
-        return redirect(url_for('home'))
-
+  
     with Session() as cursor:
-        orders = cursor.query(Orders).order_by(Orders.order_time.desc()).all()
+        orders = (
+            cursor.query(Orders)
+            .options(joinedload(Orders.user))
+            .order_by(Orders.order_time.desc())
+            .all()
+        )
+          
 
     return render_template(
         'admin_orders.html',
