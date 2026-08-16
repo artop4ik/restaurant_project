@@ -99,7 +99,7 @@
         🟡 Очікує оплати
     </span>
 
-{% elif order['payment_method'] == 'card' %}
+{% elif order['status'] == 'paid' %}
 
     <span class="badge text-bg-success">
         🟢 Оплачено
@@ -168,7 +168,7 @@
                     {{ order.address }}
 
                 </div>
-                {% if order['status'] == 'pending' %}
+                {% if order['status'] == 'pending' or order['status'] == 'paid' %}
 
     <hr>
 

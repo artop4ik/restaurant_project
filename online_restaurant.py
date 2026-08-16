@@ -492,7 +492,7 @@ def checkout():
                 ),
                 order_time=datetime.now(),
                 user_id=current_user.id,
-                status='paid' if payment_method == 'online' else 'pending',
+                status='paid' if payment_method == 'card' else 'pending',
                 total_price=total_price
             )
 
