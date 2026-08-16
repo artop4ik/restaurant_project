@@ -542,12 +542,7 @@ def cancel_order(order_id):
             flash('Це замовлення вже скасовано.', 'warning')
             return redirect(url_for('my_orders'))
 
-        if order.status == 'paid':
-            flash(
-                'Оплачене замовлення не можна скасувати через цей розділ.',
-                'warning'
-            )
-            return redirect(url_for('my_orders'))
+       
 
         order.status = 'cancelled'
 

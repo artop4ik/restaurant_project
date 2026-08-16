@@ -99,7 +99,7 @@
         🟡 Очікує оплати
     </span>
 
-{% elif order['status'] == 'paid' %}
+{% elif order['payment_method'] == 'card' %}
 
     <span class="badge text-bg-success">
         🟢 Оплачено
