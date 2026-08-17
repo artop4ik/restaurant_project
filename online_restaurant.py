@@ -180,6 +180,159 @@ def add_position():
         flash('Позицію додано успішно!')
 
     return render_template('add_position.html', csrf_token=session["csrf_token"], categories=CATEGORIES)
+
+
+@app.route('/admin/menu')
+@login_required
+@admin_required
+def admin_menu():
+    with Session() as cursor:
+        all_positions = (
+            cursor.query(Menu)
+            .order_by(Menu.category, Menu.name)
+            .all()
+        )
+
+    return render_template(
+        'admin_menu.html',
+        all_positions=all_positions,
+        categories=CATEGORIES
+    )
+
+
+@app.route('/admin/menu/edit/<int:menu_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_position(menu_id):
+    with Session() as cursor:
+        position = cursor.query(Menu).filter_by(id=menu_id).first()
+
+        if not position:
+            flash('Позицію не знайдено.', 'danger')
+            return redirect(url_for('admin_menu'))
+
+        if request.method == 'POST':
+            if not validate_csrf():
+                return "Запит заблоковано!", 403
+
+            name = request.form.get('name', '').strip()
+            ingredients = request.form.get('ingredients', '').strip()
+            description = request.form.get('description', '').strip()
+            price = request.form.get('price')
+            weight = request.form.get('weight', '').strip()
+            category = request.form.get('category')
+            file = request.files.get('img')
+
+            if category not in CATEGORIES:
+                flash('Оберіть коректну категорію!', 'danger')
+                return render_template(
+                    'edit_position.html',
+                    csrf_token=session["csrf_token"],
+                    categories=CATEGORIES,
+                    position=position
+                )
+
+            if not name or not ingredients or not description or not weight:
+                flash('Заповніть усі обов\'язкові поля!', 'danger')
+                return render_template(
+                    'edit_position.html',
+                    csrf_token=session["csrf_token"],
+                    categories=CATEGORIES,
+                    position=position
+                )
+
+            try:
+                price = float(price)
+                if price < 0:
+                    raise ValueError
+            except (ValueError, TypeError):
+                flash('Вкажіть коректну ціну!', 'danger')
+                return render_template(
+                    'edit_position.html',
+                    csrf_token=session["csrf_token"],
+                    categories=CATEGORIES,
+                    position=position
+                )
+
+            position.name = name
+            position.ingredients = ingredients
+            position.description = description
+            position.price = price
+            position.weight = weight
+            position.category = category
+
+            if file and file.filename:
+                unique_filename = f"{uuid.uuid4()}_{file.filename}"
+                output_path = os.path.join('static/menu', unique_filename)
+
+                with open(output_path, 'wb') as f:
+                    f.write(file.read())
+
+                position.file_name = unique_filename
+
+            cursor.commit()
+            flash('Позицію оновлено успішно!', 'success')
+            return redirect(url_for('admin_menu'))
+
+        return render_template(
+            'edit_position.html',
+            csrf_token=session["csrf_token"],
+            categories=CATEGORIES,
+            position=position
+        )
+
+
+@app.route('/admin/menu/toggle/<int:menu_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_menu_item(menu_id):
+    if not validate_csrf():
+        return "Запит заблоковано!", 403
+
+    with Session() as cursor:
+        position = cursor.query(Menu).filter_by(id=menu_id).first()
+
+        if not position:
+            flash('Позицію не знайдено.', 'danger')
+            return redirect(url_for('admin_menu'))
+
+        position.active = not position.active
+        cursor.commit()
+
+        flash(
+            'Позицію активовано.' if position.active else 'Позицію вимкнено з меню.',
+            'success'
+        )
+
+    return redirect(url_for('admin_menu'))
+
+
+@app.route('/admin/menu/delete/<int:menu_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_menu_item(menu_id):
+    if not validate_csrf():
+        return "Запит заблоковано!", 403
+
+    with Session() as cursor:
+        position = cursor.query(Menu).filter_by(id=menu_id).first()
+
+        if not position:
+            flash('Позицію не знайдено.', 'danger')
+            return redirect(url_for('admin_menu'))
+
+        if position.file_name:
+            file_path = os.path.join('static/menu', position.file_name)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+        cursor.delete(position)
+        cursor.commit()
+
+    flash('Позицію видалено назавжди.', 'success')
+    return redirect(url_for('admin_menu'))
+
+
 @app.route('/menu')
 def menu():
     selected_category = request.args.get('category', '').strip()
@@ -276,7 +429,7 @@ def add_to_cart(menu_id):
 @login_required
 def increase_cart(menu_id):
 
-    if request.form.get("csrf_token") != session.get("csrf_token"):
+    if not validate_csrf():
         return "Запит заблоковано!", 403
 
     cart = session.get('cart', {})
@@ -319,7 +472,7 @@ def decrease_from_cart(menu_id):
 @login_required
 def remove_from_cart(menu_id):
 
-    if request.form.get("csrf_token") != session.get("csrf_token"):
+    if not validate_csrf():
         return "Запит заблоковано!", 403
 
     cart = session.get('cart', {})

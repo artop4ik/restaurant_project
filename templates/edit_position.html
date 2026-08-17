@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редагувати позицію — Назва ресторану</title><link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}"></head><body>
+{% include '_navigation.html' %}
+<main class="form-page"><div class="container"><div class="row g-4 align-items-start">
+<div class="col-lg-4">{% include '_admin_navigation.html' %}</div>
+<div class="col-lg-8"><div class="form-card p-4 p-md-5">
+<div class="mb-4"><div class="text-uppercase small fw-bold" style="color:var(--gold);letter-spacing:1.5px">Адміністратор</div>
+<h1 class="section-title mt-1 mb-2">Редагувати позицію</h1><p class="text-muted mb-0">Оновіть дані страви «{{ position.name }}».</p></div>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category,message in messages %}<div class="alert alert-{{ category }} mb-3">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+<form action="{{ url_for('edit_position', menu_id=position.id) }}" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="row g-3">
+<div class="col-md-7"><label for="name" class="form-label">Назва страви</label><input id="name" type="text" name="name" class="form-control" value="{{ position.name }}" required></div>
+<div class="col-md-5"><label for="price" class="form-label">Ціна</label><div class="input-group"><input id="price" type="number" name="price" class="form-control" value="{{ position.price }}" min="0" step="0.01" required><span class="input-group-text">грн</span></div></div>
+<div class="col-md-5"><label for="weight" class="form-label">Вага</label><div class="input-group"><input id="weight" type="number" name="weight" class="form-control" value="{{ position.weight }}" min("0" step("1" required><span class("input-group-text">г</span></div></div>
+<div class="col-md-7"><label for="category" class="form-label">Категорія</label><select id="category" name="category" class="form-select" required>
+{% for cat in categories %}<option value="{{ cat }}" {% if position.category == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+</select></div>
+<div class="col-md-5">
+<label for="img" class="form-label">Нове фото</label>
+<input id="img" type="file" name="img" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+{% if position.file_name %}<div class="form-text">Залиште порожнім, щоб зберегти поточне фото.</div>{% endif %}
+</div>
+<div class="col-12"><label for="ingredients" class="form-label">Інгредієнти</label><textarea id="ingredients" name="ingredients" class="form-control" rows="3" required>{{ position.ingredients }}</textarea></div>
+<div class="col-12"><label for="description" class="form-label">Опис</label><textarea id="description" name="description" class="form-control" rows="4" required>{{ position.description }}</textarea></div>
+</div>
+<div class="d-flex flex-wrap justify-content-end gap-2 mt-4"><a href="{{ url_for('admin_menu') }}" class="btn btn-outline-secondary">Скасувати</a><button class="btn btn-gold px-4" type="submit">Зберегти зміни 💾</button></div>
+</form></div></div></div></div></main>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script></body></html>

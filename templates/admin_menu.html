@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Керування меню — Адмін-панель</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/restaurant.css') }}">
+</head>
+
+<body>
+
+{% include '_navigation.html' %}
+<main class="container pb-5 admin-menu-page">
+
+    <div class="row g-4">
+
+        <!-- Локальная админ-навигация -->
+        <aside class="col-lg-4">
+            {% include '_admin_navigation.html' %}
+        </aside>
+
+        <!-- Управление меню -->
+        <section class="col-lg-8">
+
+            <div class="admin-menu-card">
+
+                <div class="admin-menu-header">
+
+                    <div>
+                        <div class="admin-menu-label">
+                            АДМІНІСТРАТОР
+                        </div>
+
+                        <h1>
+                            Керування меню
+                        </h1>
+
+                        <p>
+                            Редагуйте, вимикайте або видаляйте страви з меню.
+                        </p>
+                    </div>
+
+                    <a href="{{ url_for('add_position') }}"
+                       class="btn btn-gold admin-add-button">
+                        ➕ Додати страву
+                    </a>
+
+                </div>
+
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+
+                {% if all_positions %}
+
+                    <div class="table-responsive">
+
+                        <table class="table admin-menu-table align-middle">
+
+                            <thead>
+                                <tr>
+                                    <th>Фото</th>
+                                    <th>Назва</th>
+                                    <th>Категорія</th>
+                                    <th>Ціна</th>
+                                    <th>Статус</th>
+                                    <th>Дії</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for position in all_positions %}
+
+                                <tr>
+
+                                    <td>
+
+                                        {% if position.file_name %}
+
+                                            <img
+                                                src="{{ url_for('static', filename='menu/' ~ position.file_name) }}"
+                                                alt="{{ position.name }}"
+                                                class="admin-menu-image"
+                                            >
+
+                                        {% else %}
+
+                                            <div class="admin-menu-placeholder">
+                                                🍕
+                                            </div>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td class="admin-menu-name">
+                                        {{ position.name }}
+                                    </td>
+
+
+                                    <td>
+                                        <span class="badge admin-category">
+                                            {{ position.category }}
+                                        </span>
+                                    </td>
+
+
+                                    <td class="admin-menu-price">
+                                        {{ position.price }} грн
+                                    </td>
+
+
+                                    <td>
+
+                                        {% if position.active %}
+
+                                            <span class="badge admin-status-active">
+                                                🟢 Активна
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge admin-status-disabled">
+                                                ⚪ Вимкнена
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <div class="admin-actions">
+
+                                            <a
+                                                href="{{ url_for('edit_position', menu_id=position.id) }}"
+                                                class="btn btn-sm btn-outline-secondary"
+                                            >
+                                                ✏️ Редагувати
+                                            </a>
+
+
+                                            <form
+                                                action="{{ url_for('toggle_menu_item', menu_id=position.id) }}"
+                                                method="POST"
+                                            >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="csrf_token"
+                                                    value="{{ session['csrf_token'] }}"
+                                                >
+
+                                                {% if position.active %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-sm btn-outline-warning"
+                                                    >
+                                                        🚫 Вимкнути
+                                                    </button>
+
+                                                {% else %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-sm btn-outline-success"
+                                                    >
+                                                        ✅ Увімкнути
+                                                    </button>
+
+                                                {% endif %}
+
+                                            </form>
+
+
+                                            <form
+                                                action="{{ url_for('delete_menu_item', menu_id=position.id) }}"
+                                                method="POST"
+                                                onsubmit="return confirm('Видалити «{{ position.name }}» назавжди?');"
+                                            >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="csrf_token"
+                                                    value="{{ session['csrf_token'] }}"
+                                                >
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                >
+                                                    🗑️ Видалити
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="feature-card text-center py-5">
+
+                        <div class="display-4 mb-3">
+                            🍽️
+                        </div>
+
+                        <h2 class="h5 fw-bold">
+                            Меню поки порожнє
+                        </h2>
+
+                        <p class="text-muted mb-0">
+                            Додайте першу страву, щоб вона з'явилася тут.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
