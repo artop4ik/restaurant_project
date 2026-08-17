@@ -37,6 +37,8 @@ if not SECRET_KEY:
         'SECRET_KEY is not set. Create a .env file (see .env.example) '
         'or set the SECRET_KEY environment variable before running the app.'
     )
+
+DATABASE_URL = os.getenv("DATABASE_URL")    
 app.config['SECRET_KEY'] = SECRET_KEY
 
 login_manager = LoginManager()
