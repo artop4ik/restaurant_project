@@ -882,17 +882,7 @@ def admin_cancel_reservation(reservation_id):
     flash('Бронювання скасовано.', 'success')
     return redirect(url_for('admin_reservations'))
 
-@app.route('/make-me-admin')
-@login_required
-def make_me_admin():
-    with Session() as db:
-        user = db.query(Users).filter_by(id=current_user.id).first()
 
-        if user:
-            user.role = 'admin'
-            db.commit()
-
-    return "Ти тепер admin. Видали цей маршрут з коду!"
 
 
 if __name__ == '__main__':
