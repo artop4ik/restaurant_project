@@ -1,0 +1,25 @@
+# Secrets — never commit these
+.env
+
+# Database (contains real user data / password hashes once you have users)
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded dish photos — usually don't need to be in version control
+static/menu/*
+!static/menu/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

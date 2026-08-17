@@ -18,6 +18,9 @@ import uuid
 
 import secrets
 
+from dotenv import load_dotenv
+load_dotenv()  # reads variables from a local .env file, if present
+
 app = Flask(__name__)
 
 FILES_PATH = 'static/menu'
@@ -27,7 +30,14 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 1024 * 1024  # 1MB
 app.config['MAX_FORM_PARTS'] = 500
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
-app.config['SECRET_KEY'] = '#cv)3v7w$*s3fk;5c!@y0?:?№3"9)#'
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError(
+        'SECRET_KEY is not set. Create a .env file (see .env.example) '
+        'or set the SECRET_KEY environment variable before running the app.'
+    )
+app.config['SECRET_KEY'] = SECRET_KEY
 
 login_manager = LoginManager()
 login_manager.init_app(app)
