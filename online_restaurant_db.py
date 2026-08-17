@@ -97,5 +97,4 @@ class Orders(Base):
     user = relationship("Users", foreign_keys="Orders.user_id", back_populates="orders")
     total_price: Mapped[float] = mapped_column()
 
-if __name__ == '__main__':
-    Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
