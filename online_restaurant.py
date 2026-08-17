@@ -82,8 +82,22 @@ def apply_csp(response):
     response.set_cookie('nonce', nonce)
     return response
 
+
 def validate_csrf():
     token = request.form.get("csrf_token")
+
+    if not token:
+        return False
+
+    session_token = session.get("csrf_token")
+
+    if not session_token:
+        return False
+
+    return secrets.compare_digest(token, session_token)
+
+def get_cart_key():
+    return f'cart_{current_user.id}'
 
     if not token or token != session.get("csrf_token"):
         return False
@@ -153,8 +167,6 @@ def logout():
 @login_required
 @admin_required
 def add_position():
-    if current_user.role != 'admin':
-        return redirect(url_for('home'))
 
     if request.method == "POST":
         if not validate_csrf():
@@ -372,11 +384,11 @@ def menu():
         selected_category=selected_category,
         search_query=search_query
     )
-
 @app.route('/cart')
 @login_required
 def cart():
-    cart_data = session.get('cart', {})
+    cart_key = get_cart_key()
+    cart_data = session.get(cart_key, {})
 
     cart_items = []
     total_price = 0
@@ -408,7 +420,6 @@ def cart():
         total_price=total_price
     )
 
-
 @app.route('/cart/add/<int:menu_id>', methods=['POST'])
 @login_required
 def add_to_cart(menu_id):
@@ -416,7 +427,8 @@ def add_to_cart(menu_id):
     if not validate_csrf():
         return "Запит заблоковано!", 403
 
-    cart = session.get('cart', {})
+    cart_key = get_cart_key()
+    cart = session.get(cart_key, {})
 
     menu_id = str(menu_id)
 
@@ -425,15 +437,12 @@ def add_to_cart(menu_id):
     else:
         cart[menu_id] = 1
 
-    session['cart'] = cart
+    session[cart_key] = cart
     session.modified = True
 
-    # ВАЖНО:
-    # после добавления возвращаем пользователя именно в меню
     flash('Позицію успішно додано до кошика!', 'success')
 
     return redirect(url_for('menu'))
-
 
 @app.route('/cart/increase/<int:menu_id>', methods=['POST'])
 @login_required
@@ -442,26 +451,27 @@ def increase_cart(menu_id):
     if not validate_csrf():
         return "Запит заблоковано!", 403
 
-    cart = session.get('cart', {})
+    cart_key = get_cart_key()
+    cart = session.get(cart_key, {})
 
     menu_id = str(menu_id)
 
     if menu_id in cart:
         cart[menu_id] += 1
 
-    session['cart'] = cart
+    session[cart_key] = cart
     session.modified = True
 
     return redirect(url_for('cart'))
-
-
 @app.route('/cart/decrease/<int:menu_id>', methods=['POST'])
 @login_required
 def decrease_from_cart(menu_id):
 
     if not validate_csrf():
         return "Запит заблоковано!", 403
-    cart = session.get('cart', {})
+
+    cart_key = get_cart_key()
+    cart = session.get(cart_key, {})
 
     menu_id = str(menu_id)
 
@@ -472,11 +482,10 @@ def decrease_from_cart(menu_id):
         if cart[menu_id] <= 0:
             del cart[menu_id]
 
-    session['cart'] = cart
+    session[cart_key] = cart
     session.modified = True
 
     return redirect(url_for('cart'))
-
 
 @app.route('/cart/remove/<int:menu_id>', methods=['POST'])
 @login_required
@@ -485,14 +494,15 @@ def remove_from_cart(menu_id):
     if not validate_csrf():
         return "Запит заблоковано!", 403
 
-    cart = session.get('cart', {})
+    cart_key = get_cart_key()
+    cart = session.get(cart_key, {})
 
     menu_id = str(menu_id)
 
     if menu_id in cart:
         del cart[menu_id]
 
-    session['cart'] = cart
+    session[cart_key] = cart
     session.modified = True
 
     return redirect(url_for('cart'))
@@ -501,8 +511,7 @@ def remove_from_cart(menu_id):
 @login_required
 @admin_required
 def admin():
-    if current_user.role != 'admin':
-        return redirect(url_for('home'))
+    
 
     with Session() as cursor:
         menu_count = cursor.query(Menu).filter_by(active=True).count()
@@ -584,7 +593,8 @@ def my_orders():
 @login_required
 def checkout():
 
-    cart_data = session.get('cart', {})
+    cart_key = get_cart_key()
+    cart_data = session.get(cart_key, {})
 
     if not cart_data:
         flash('Ваш кошик порожній.', 'warning')
@@ -664,7 +674,7 @@ def checkout():
 
 
         # Очищаем корзину после успешного создания заказа
-        session.pop('cart', None)
+        session.pop(cart_key, None)
 
         flash(
             'Замовлення успішно оформлено! 🎉',
@@ -874,4 +884,4 @@ def admin_cancel_reservation(reservation_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, )
