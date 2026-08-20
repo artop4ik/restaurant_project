@@ -112,28 +112,122 @@ def home():
     return render_template('home.html')
 
 
-@app.route("/register", methods = ['GET','POST'])
+from sqlalchemy.exc import IntegrityError
+
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
+    if request.method == "POST":
+
         if not validate_csrf():
             return "Запит заблоковано!", 403
-        nickname = request.form['nickname']
-        email = request.form['email']
-        password = request.form['password']
+
+        # Получаем данные и убираем пробелы по краям
+        nickname = request.form.get("nickname", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        # Проверяем пустые поля
+        if not nickname or not email or not password:
+            flash("Заповніть усі поля!", "danger")
+
+            return render_template(
+                "register.html",
+                csrf_token=session["csrf_token"]
+            )
+
+        # Проверка длины ника
+        if len(nickname) < 3 or len(nickname) > 30:
+            flash("Нікнейм має містити від 3 до 30 символів!", "danger")
+
+            return render_template(
+                "register.html",
+                csrf_token=session["csrf_token"]
+            )
+
+        # Простая проверка email
+        if "@" not in email or "." not in email.split("@")[-1]:
+            flash("Введіть коректний email!", "danger")
+
+            return render_template(
+                "register.html",
+                csrf_token=session["csrf_token"]
+            )
 
         with Session() as cursor:
-            if cursor.query(Users).filter_by(email=email).first() or cursor.query(Users).filter_by(nickname = nickname).first():
-                flash('Користувач з таким email або нікнеймом вже існує!', 'danger')
-                return render_template('register.html',csrf_token=session["csrf_token"])
 
-            new_user = Users(nickname=nickname, email=email)
+            # Проверяем существующий email
+            existing_email = (
+                cursor.query(Users)
+                .filter_by(email=email)
+                .first()
+            )
+
+            if existing_email:
+                flash(
+                    "Цей email вже використовується!",
+                    "danger"
+                )
+
+                return render_template(
+                    "register.html",
+                    csrf_token=session["csrf_token"]
+                )
+
+            # Проверяем существующий nickname
+            existing_nickname = (
+                cursor.query(Users)
+                .filter_by(nickname=nickname)
+                .first()
+            )
+
+            if existing_nickname:
+                flash(
+                    "Цей нікнейм вже зайнятий!",
+                    "danger"
+                )
+
+                return render_template(
+                    "register.html",
+                    csrf_token=session["csrf_token"]
+                )
+
+            # Создаём пользователя
+            new_user = Users(
+                nickname=nickname,
+                email=email,
+                role="user"
+            )
+
             new_user.set_password(password)
+
             cursor.add(new_user)
-            cursor.commit()
-            cursor.refresh(new_user)
+
+            try:
+                cursor.commit()
+                cursor.refresh(new_user)
+
+            except IntegrityError:
+                cursor.rollback()
+
+                flash(
+                    "Такий email або нікнейм вже використовується!",
+                    "danger"
+                )
+
+                return render_template(
+                    "register.html",
+                    csrf_token=session["csrf_token"]
+                )
+
             login_user(new_user)
-            return redirect(url_for('home'))
-    return render_template('register.html',csrf_token=session["csrf_token"])
+
+            return redirect(url_for("home"))
+
+    return render_template(
+        "register.html",
+        csrf_token=session["csrf_token"]
+    )
 
 
 @app.route("/login", methods = ["GET","POST"])
