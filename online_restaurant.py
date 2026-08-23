@@ -1,4 +1,5 @@
 import smtplib
+import requests
 
 from flask import Flask, json, jsonify, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user, login_user, logout_user # pip install flask-login
@@ -45,27 +46,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 app.config['SECRET_KEY'] = SECRET_KEY
 
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-
-app.config['MAIL_PORT'] = 587
-
-app.config['MAIL_USE_TLS'] = True
-
-
-
-
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['RESEND_API_KEY'] = os.environ.get('RESEND_API_KEY')
 
 app.config['ADMIN_EMAIL'] = os.environ.get('ADMIN_EMAIL')
-
-
-print('DEBUG MAIL_USERNAME set:', bool(app.config['MAIL_USERNAME']), flush=True)
-
-print('DEBUG MAIL_PASSWORD set:', bool(app.config['MAIL_PASSWORD']), flush=True)
-
-print('DEBUG ADMIN_EMAIL set:', bool(app.config['ADMIN_EMAIL']), flush=True)
 
 
 
@@ -144,15 +127,20 @@ def home():
 from sqlalchemy.exc import IntegrityError
 
 
+
 def send_new_user_notification(user):
 
     """
 
     Надсилає адміну лист на email, коли реєструється новий користувач.
 
+    Використовує Resend API (HTTPS), а не SMTP, бо багато хостингів
+
+    (зокрема Render) блокують вихідні SMTP-з'єднання.
+
     Помилка надсилання не повинна ламати процес реєстрації,
 
-    тому все загорнуто в try/except.
+    тому все загорнуто в try/except, а запит має timeout.
 
     """
 
@@ -160,17 +148,15 @@ def send_new_user_notification(user):
 
 
 
-    if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+    if not app.config['RESEND_API_KEY'] or not app.config['ADMIN_EMAIL']:
 
-        print('DEBUG: MAIL_USERNAME or MAIL_PASSWORD missing, skipping send', flush=True)
+        print('DEBUG: RESEND_API_KEY or ADMIN_EMAIL missing, skipping send', flush=True)
 
         return
 
 
 
     try:
-
-        subject = f'Новий користувач: {user.nickname}'
 
         body = (
 
@@ -186,41 +172,41 @@ def send_new_user_notification(user):
 
 
 
-        msg = MIMEText(body, 'plain', 'utf-8')
+        response = requests.post(
 
-        msg['Subject'] = subject
+            'https://api.resend.com/emails',
 
-        msg['From'] = app.config['MAIL_USERNAME']
+            headers={
 
-        msg['To'] = app.config['ADMIN_EMAIL']
+                'Authorization': f'Bearer {app.config["RESEND_API_KEY"]}',
+
+                'Content-Type': 'application/json',
+
+            },
+
+            json={
+
+                # Без верифікованого власного домену Resend дозволяє
+
+                # відправляти листи лише з onboarding@resend.dev.
+
+                'from': 'onboarding@resend.dev',
+
+                'to': [app.config['ADMIN_EMAIL']],
+
+                'subject': f'Новий користувач: {user.nickname}',
+
+                'text': body,
+
+            },
+
+            timeout=10,
+
+        )
 
 
 
-        print('DEBUG: connecting to', app.config['MAIL_SERVER'], app.config['MAIL_PORT'], flush=True)
-
-
-
-        with smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT']) as server:
-
-            if app.config.get('MAIL_USE_TLS'):
-
-                server.starttls()
-
-            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
-
-            server.sendmail(
-
-                app.config['MAIL_USERNAME'],
-
-                [app.config['ADMIN_EMAIL']],
-
-                msg.as_string()
-
-            )
-
-
-
-        print('DEBUG: email sent successfully', flush=True)
+        print('DEBUG: Resend response', response.status_code, response.text, flush=True)
 
 
 
@@ -228,12 +214,7 @@ def send_new_user_notification(user):
 
         print('ERROR sending new user email:', repr(e), flush=True)
 
-
-
-
-
-
-
+        
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
