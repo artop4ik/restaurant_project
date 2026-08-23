@@ -1,3 +1,5 @@
+import smtplib
+
 from flask import Flask, json, jsonify, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user, login_user, logout_user # pip install flask-login
 from flask_login import LoginManager
@@ -15,6 +17,7 @@ from sqlalchemy.orm import joinedload
 
 import os
 import uuid
+from email.mime.text import MIMEText
 
 import secrets
 
@@ -40,6 +43,23 @@ if not SECRET_KEY:
 
 DATABASE_URL = os.getenv("DATABASE_URL")    
 app.config['SECRET_KEY'] = SECRET_KEY
+
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+
+app.config['MAIL_PORT'] = 587
+
+app.config['MAIL_USE_TLS'] = True
+
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+
+app.config['ADMIN_EMAIL'] = os.environ.get('ADMIN_EMAIL')
+
+
+
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -113,6 +133,82 @@ def home():
 
 
 from sqlalchemy.exc import IntegrityError
+
+
+
+def send_new_user_notification(user):
+
+    """
+
+    Надсилає адміну лист на email, коли реєструється новий користувач.
+
+    Помилка надсилання не повинна ламати процес реєстрації,
+
+    тому все загорнуто в try/except.
+
+    """
+
+    try:
+
+        if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+
+            return
+
+
+
+        subject = f'Новий користувач: {user.nickname}'
+
+        body = (
+
+            f"На сайті зареєструвався новий користувач.\n\n"
+
+            f"ID: {user.id}\n"
+
+            f"Nickname: {user.nickname}\n"
+
+            f"Email: {user.email}\n"
+
+        )
+
+
+
+        msg = MIMEText(body, 'plain', 'utf-8')
+
+        msg['Subject'] = subject
+
+        msg['From'] = app.config['MAIL_USERNAME']
+
+        msg['To'] = app.config['ADMIN_EMAIL']
+
+
+
+        with smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT']) as server:
+
+            if app.config.get('MAIL_USE_TLS'):
+
+                server.starttls()
+
+            server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+
+            server.sendmail(
+
+                app.config['MAIL_USERNAME'],
+
+                [app.config['ADMIN_EMAIL']],
+
+                msg.as_string()
+
+            )
+
+
+
+    except Exception as e:
+
+        app.logger.error(f'Не вдалося надіслати email про нового користувача: {e}')
+
+
+
+
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -977,6 +1073,34 @@ def admin_cancel_reservation(reservation_id):
 
     flash('Бронювання скасовано.', 'success')
     return redirect(url_for('admin_reservations'))
+
+@app.route('/admin/users')
+
+@login_required
+
+@admin_required
+
+def admin_users():
+
+
+
+    with Session() as cursor:
+
+        users = (
+
+            cursor.query(Users)
+
+            .order_by(Users.id)
+
+            .all()
+
+        )
+
+
+
+    return render_template('admin_users.html', users=users)
+
+
 
 
 
