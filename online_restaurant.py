@@ -325,6 +325,8 @@ def register():
                 cursor.commit()
                 cursor.refresh(new_user)
 
+                send_new_user_notification(new_user)
+
             except IntegrityError:
                 cursor.rollback()
 
