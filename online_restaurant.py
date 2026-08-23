@@ -51,12 +51,21 @@ app.config['MAIL_PORT'] = 587
 
 app.config['MAIL_USE_TLS'] = True
 
+
+
+
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 
 app.config['ADMIN_EMAIL'] = os.environ.get('ADMIN_EMAIL')
 
+
+print('DEBUG MAIL_USERNAME set:', bool(app.config['MAIL_USERNAME']), flush=True)
+
+print('DEBUG MAIL_PASSWORD set:', bool(app.config['MAIL_PASSWORD']), flush=True)
+
+print('DEBUG ADMIN_EMAIL set:', bool(app.config['ADMIN_EMAIL']), flush=True)
 
 
 
@@ -135,7 +144,6 @@ def home():
 from sqlalchemy.exc import IntegrityError
 
 
-
 def send_new_user_notification(user):
 
     """
@@ -148,13 +156,19 @@ def send_new_user_notification(user):
 
     """
 
+    print('DEBUG: send_new_user_notification called for', user.nickname, flush=True)
+
+
+
+    if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+
+        print('DEBUG: MAIL_USERNAME or MAIL_PASSWORD missing, skipping send', flush=True)
+
+        return
+
+
+
     try:
-
-        if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
-
-            return
-
-
 
         subject = f'Новий користувач: {user.nickname}'
 
@@ -182,6 +196,10 @@ def send_new_user_notification(user):
 
 
 
+        print('DEBUG: connecting to', app.config['MAIL_SERVER'], app.config['MAIL_PORT'], flush=True)
+
+
+
         with smtplib.SMTP(app.config['MAIL_SERVER'], app.config['MAIL_PORT']) as server:
 
             if app.config.get('MAIL_USE_TLS'):
@@ -202,9 +220,14 @@ def send_new_user_notification(user):
 
 
 
+        print('DEBUG: email sent successfully', flush=True)
+
+
+
     except Exception as e:
 
-        app.logger.error(f'Не вдалося надіслати email про нового користувача: {e}')
+        print('ERROR sending new user email:', repr(e), flush=True)
+
 
 
 
@@ -218,7 +241,6 @@ def register():
         if not validate_csrf():
             return "Запит заблоковано!", 403
 
-        # Получаем данные и убираем пробелы по краям
         nickname = request.form.get("nickname", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
